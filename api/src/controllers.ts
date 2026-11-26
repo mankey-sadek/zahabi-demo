@@ -50,6 +50,7 @@ export class AuthController {
     const provisionMs = Date.now() - t0;
     await control.query("UPDATE tenants SET status = 'active', schema_version = $2 WHERE id = $1", [t.id, TENANT_SCHEMA_VERSION]);
 
+    const isNewUser = !user;
     if (!user) {
       user = (await control.query(
         'INSERT INTO users (phone, name, password_hash) VALUES ($1, $2, $3) RETURNING id, name',
@@ -64,6 +65,9 @@ export class AuthController {
     return {
       token: signTenantToken({ sub: user.id, tid: t.id, role: 'owner', name: user.name }),
       tenant: { id: t.id, slug, name: b.shopName.trim(), dbName },
+      user: { name: user.name },
+      // The phone already had an account: the new shop joins it (TEN-05), keeping the old owner name and password.
+      existingAccount: !isNewUser,
       provisionMs,
     };
   }
@@ -88,6 +92,7 @@ export class AuthController {
       token: signTenantToken({ sub: user.id, tid: chosen.id, role: chosen.role, name: user.name }),
       tenant: chosen,
       tenants,
+      user: { name: user.name },
     };
   }
 

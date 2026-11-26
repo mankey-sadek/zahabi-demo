@@ -36,7 +36,8 @@ export const PLUGIN_CATALOG: CatalogPlugin[] = [
     },
     code: `
 function handle(event, payload, settings, store) {
-  const who = payload.customer_name || 'عميل نقدي';
+  if (!payload.customer_name) return { message: 'فاتورة من غير اسم عميل، مفيش نقط' };
+  const who = payload.customer_name;
   const per = Number(settings.egp_per_point || 100);
   const earned = Math.floor(payload.total_piasters / 100 / per);
   const key = 'points:' + who;

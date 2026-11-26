@@ -151,6 +151,7 @@ function Pos({ s }: { s: ShopSession }) {
       const ms = Math.round(performance.now() - t0);
       setMsg({ ok: true, text: `الفاتورة ${r.number} اتقفلت بـ ${money(r.totalEgp)} في ${ms.toLocaleString('ar-EG')} مللي ثانية` });
       setPicked([]);
+      setCustomer('');
       items.reload();
     } catch (e) {
       setMsg({ ok: false, text: (e as Error).message });
@@ -309,8 +310,11 @@ function Store({ s }: { s: ShopSession }) {
             <div className="muted">الإضافة دي هتقدر توصل للحاجات دي بس في محلك. لازم توافق عليها كلها:</div>
             <div className="stack" style={{ gap: 6 }}>{consent.permissions.map((x) => <span key={x} className="perm">{x}</span>)}</div>
             <div className="muted">الإضافة مش بتلمس قاعدة البيانات مباشرة، وتقدر توقفها في أي وقت.</div>
+            {consent.pricingModel !== 'free' && (
+              <div className="tag gold" style={{ alignSelf: 'flex-start' }}>السعر: {PRICE_LABEL[consent.pricingModel](consent.priceEgp)} (في الديمو مفيش دفع حقيقي)</div>
+            )}
             <div className="row">
-              <button className="btn" onClick={() => install(consent)}>موافق، ثبّت</button>
+              <button className="btn" onClick={() => install(consent)}>{consent.pricingModel === 'free' ? 'موافق، ثبّت' : 'موافق على الصلاحيات والسعر، ثبّت'}</button>
               <button className="btn ghost" onClick={() => setConsent(null)}>إلغاء</button>
             </div>
           </div>
