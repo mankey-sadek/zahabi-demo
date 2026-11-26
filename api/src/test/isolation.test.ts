@@ -52,3 +52,22 @@ test('a forged or missing token is refused', async () => {
   assert.equal((await call('/items')).status, 401);
   assert.equal((await call('/items', undefined, 'not-a-token')).status, 401);
 });
+
+test('one phone with two shops can log in to either one', async () => {
+  const phone = `012${String(Date.now()).slice(-8)}`;
+  const first = await signup(`multi-a-${uniq}`, phone);
+  const second = await call('/tenants', { shopName: 'محل تاني', slug: `multi-b-${uniq}`, ownerName: 'اسم تاني', phone, password: 'secret123' });
+  assert.equal(second.status, 201, JSON.stringify(second.body));
+  assert.equal(second.body.existingAccount, true);
+  assert.equal(second.body.user.name, 'اختبار', 'the existing owner name is kept');
+
+  const login = await call('/auth/login', { phone, password: 'secret123' });
+  assert.equal(login.status, 200);
+  assert.equal(login.body.tenants.length, 2);
+
+  const pickB = await call('/auth/login', { phone, password: 'secret123', tenantId: second.body.tenant.id });
+  const meB = (await call('/me', undefined, pickB.body.token)).body as { connectedDatabase: string };
+  assert.equal(meB.connectedDatabase, second.body.tenant.dbName);
+  const meA = (await call('/me', undefined, login.body.token)).body as { connectedDatabase: string };
+  assert.equal(meA.connectedDatabase, first.tenant.dbName);
+});
