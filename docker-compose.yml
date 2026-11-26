@@ -1,0 +1,32 @@
+# Zahabi demo: one PostgreSQL server holding the control DB and one DB per shop, plus the app.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      retries: 20
+
+  app:
+    build: .
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      JWT_SECRET: change-me-for-anything-real
+      PLATFORM_USER: admin
+      PLATFORM_PASSWORD: admin123
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
